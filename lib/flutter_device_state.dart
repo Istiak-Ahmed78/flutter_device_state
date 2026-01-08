@@ -1,4 +1,4 @@
-library flutter_device_state;
+library;
 
 // VPN Detection
 export 'src/vpn/vpn_detector.dart';
