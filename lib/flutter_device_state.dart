@@ -1,14 +1,10 @@
-// You have generated a new plugin project without specifying the `--platforms`
-// flag. A plugin project with no platform support was generated. To add a
-// platform, run `flutter create -t plugin --platforms <platforms> .` under the
-// same directory. You can also find a detailed instruction on how to add
-// platforms in the `pubspec.yaml` at
-// https://flutter.dev/to/pubspec-plugin-platforms.
+library flutter_device_state;
 
-import 'flutter_device_state_platform_interface.dart';
+// VPN Detection
+export 'src/vpn/vpn_detector.dart';
+export 'src/vpn/vpn_state.dart';
 
-class FlutterDeviceState {
-  Future<String?> getPlatformVersion() {
-    return FlutterDeviceStatePlatform.instance.getPlatformVersion();
-  }
-}
+// TODO: Add more exports as we build more features
+// export 'src/network/network_monitor.dart';
+// export 'src/thermal/thermal_monitor.dart';
+// export 'src/battery/battery_monitor.dart';
