@@ -1,40 +1,37 @@
-import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'vpn_state.dart';
 
-/// Platform interface for VPN detection
+/// Platform-specific implementation for VPN detection
 class VpnDetectorPlatform {
-  /// The method channel used to communicate with native platforms
-  static const MethodChannel _channel =
+  static const MethodChannel _methodChannel =
       MethodChannel('flutter_device_state/vpn');
-
-  /// The event channel for VPN state changes
   static const EventChannel _eventChannel =
       EventChannel('flutter_device_state/vpn_state');
 
-  /// Checks if VPN is currently active
+  /// Check current VPN status
   ///
   /// Returns [VpnState.connected] if VPN is active,
-  /// [VpnState.disconnected] if not active,
-  /// or [VpnState.unknown] if state cannot be determined.
-  ///
-  /// Throws [PlatformException] if the platform is not supported.
+  /// [VpnState.disconnected] if VPN is not active,
+  /// or [VpnState.unknown] if status cannot be determined.
   Future<VpnState> checkVpnStatus() async {
     try {
-      final isActive = await _channel.invokeMethod<bool>('checkVpnStatus');
+      debugPrint('VpnDetectorPlatform: Calling checkVpnStatus');
+      final isActive =
+          await _methodChannel.invokeMethod<bool>('checkVpnStatus');
+      debugPrint('VpnDetectorPlatform: Received response: $isActive');
 
       if (isActive == null) {
+        debugPrint('VpnDetectorPlatform: Received null response');
         return VpnState.unknown;
       }
-
       return isActive ? VpnState.connected : VpnState.disconnected;
     } on PlatformException catch (e) {
-      // ignore: avoid_print
-      print('Error checking VPN status: ${e.message}');
+      debugPrint(
+          'VpnDetectorPlatform: PlatformException - Code: ${e.code}, Message: ${e.message}');
       return VpnState.unknown;
-    } on Exception catch (e) {
-      // ignore: avoid_print
-      print('Unexpected error checking VPN status: $e');
+    } on Object catch (e) {
+      debugPrint('VpnDetectorPlatform: Unexpected error - $e');
       return VpnState.unknown;
     }
   }
@@ -48,13 +45,16 @@ class VpnDetectorPlatform {
   /// only emit the initial state.
   Stream<VpnState> get vpnStateStream =>
       _eventChannel.receiveBroadcastStream().map((isActive) {
+        debugPrint(
+            'VpnDetectorPlatform: Stream received: $isActive (${isActive.runtimeType})');
+
         if (isActive is bool) {
           return isActive ? VpnState.connected : VpnState.disconnected;
         }
+        debugPrint('VpnDetectorPlatform: Stream received non-boolean value');
         return VpnState.unknown;
       }).handleError((Object error) {
-        // ignore: avoid_print
-        print('Error in VPN state stream: $error');
-        return VpnState.unknown;
+        debugPrint('VpnDetectorPlatform: Stream error - $error');
+        // Error is handled, stream continues
       });
 }
