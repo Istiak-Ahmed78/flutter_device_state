@@ -91,86 +91,91 @@ class _MyAppState extends State<MyApp> {
           centerTitle: true,
         ),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Status Icon
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: _getStatusColor().withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: _getStatusColor(), width: 3),
-                  ),
-                  child: Icon(
-                    _getStatusIcon(),
-                    size: 60,
-                    color: _getStatusColor(),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Status Text
-                Text(
-                  'VPN Status',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _vpnState.description,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: _getStatusColor(),
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 48),
-
-                // Status Card
-                Card(
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        _buildInfoRow('Connected', _vpnState.isConnected),
-                        const Divider(),
-                        _buildInfoRow('Disconnected', _vpnState.isDisconnected),
-                        const Divider(),
-                        _buildInfoRow('Unknown', _vpnState.isUnknown),
-                      ],
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Status Icon
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: _getStatusColor().withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _getStatusColor(), width: 3),
+                    ),
+                    child: Icon(
+                      _getStatusIcon(),
+                      size: 60,
+                      color: _getStatusColor(),
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Refresh Button
-                ElevatedButton.icon(
-                  onPressed: _checkVpnStatus,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Check Again'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
+                  // Status Text
+                  Text(
+                    'VPN Status',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text(
+                    _vpnState.description,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: _getStatusColor(),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 48),
 
-                // Info Text
-                Text(
-                  'Real-time monitoring is active',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                ),
-              ],
+                  // Status Card
+                  Card(
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          _buildInfoRow('Connected', _vpnState.isConnected),
+                          const Divider(),
+                          _buildInfoRow(
+                            'Disconnected',
+                            _vpnState.isDisconnected,
+                          ),
+                          const Divider(),
+                          _buildInfoRow('Unknown', _vpnState.isUnknown),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Refresh Button
+                  ElevatedButton.icon(
+                    onPressed: _checkVpnStatus,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Check Again'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Info Text
+                  Text(
+                    'Real-time monitoring is active',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

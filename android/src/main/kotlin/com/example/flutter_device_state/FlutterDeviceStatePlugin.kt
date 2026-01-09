@@ -24,7 +24,6 @@ class FlutterDeviceStatePlugin : FlutterPlugin, MethodCallHandler, EventChannel.
     private var eventSink: EventChannel.EventSink? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     
-    // Handler for posting to main thread - CRITICAL FIX
     private val mainHandler = Handler(Looper.getMainLooper())
 
     companion object {
