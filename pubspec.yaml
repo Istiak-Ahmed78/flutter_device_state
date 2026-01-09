@@ -28,3 +28,5 @@ flutter:
         pluginClass: FlutterDeviceStatePlugin
       ios:
         pluginClass: FlutterDeviceStatePlugin
+      macos:  # ✅ Add this
+        pluginClass: FlutterDeviceStatePlugin

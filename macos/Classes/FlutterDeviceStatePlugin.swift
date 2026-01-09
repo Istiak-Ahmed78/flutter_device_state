@@ -1,5 +1,4 @@
-import Flutter
-import UIKit
+import FlutterMacOS
 import NetworkExtension
 import os.log
 
@@ -15,12 +14,12 @@ public class FlutterDeviceStatePlugin: NSObject, FlutterPlugin, FlutterStreamHan
     public static func register(with registrar: FlutterPluginRegistrar) {
         let methodChannel = FlutterMethodChannel(
             name: "flutter_device_state/vpn",
-            binaryMessenger: registrar.messenger()
+            binaryMessenger: registrar.messenger
         )
         
         let eventChannel = FlutterEventChannel(
             name: "flutter_device_state/vpn_state",
-            binaryMessenger: registrar.messenger()
+            binaryMessenger: registrar.messenger
         )
         
         let instance = FlutterDeviceStatePlugin()
@@ -44,37 +43,26 @@ public class FlutterDeviceStatePlugin: NSObject, FlutterPlugin, FlutterStreamHan
     private func checkVpnStatus(result: @escaping FlutterResult) {
         os_log("Checking VPN status", log: Self.logger, type: .info)
         
-        if #available(iOS 12.0, *) {
-            NEVPNManager.shared().loadFromPreferences { [weak self] error in
-                if let error = error {
-                    os_log("Error loading VPN preferences: %{public}@", 
-                           log: Self.logger, 
-                           type: .error, 
-                           error.localizedDescription)
-                    result(false)
-                    return
-                }
-                
-                let isVpnActive = self?.isVpnActive() ?? false
-                os_log("VPN status: %{public}@", 
+        NEVPNManager.shared().loadFromPreferences { [weak self] error in
+            if let error = error {
+                os_log("Error loading VPN preferences: %{public}@", 
                        log: Self.logger, 
-                       type: .info, 
-                       isVpnActive ? "active" : "inactive")
-                result(isVpnActive)
+                       type: .error, 
+                       error.localizedDescription)
+                result(false)
+                return
             }
-        } else {
-            os_log("VPN detection not available (iOS < 12.0)", 
+            
+            let isVpnActive = self?.isVpnActive() ?? false
+            os_log("VPN status: %{public}@", 
                    log: Self.logger, 
-                   type: .warning)
-            result(false)
+                   type: .info, 
+                   isVpnActive ? "active" : "inactive")
+            result(isVpnActive)
         }
     }
     
     private func isVpnActive() -> Bool {
-        guard #available(iOS 12.0, *) else {
-            return false
-        }
-        
         let vpnManager = NEVPNManager.shared()
         let status = vpnManager.connection.status
         
@@ -97,42 +85,35 @@ public class FlutterDeviceStatePlugin: NSObject, FlutterPlugin, FlutterStreamHan
         os_log("Event channel listener attached", log: Self.logger, type: .info)
         self.eventSink = events
         
-        if #available(iOS 12.0, *) {
-            NEVPNManager.shared().loadFromPreferences { [weak self] error in
-                guard let self = self else { return }
-                
-                if let error = error {
-                    os_log("Error loading VPN preferences: %{public}@", 
-                           log: Self.logger, 
-                           type: .error, 
-                           error.localizedDescription)
-                    events(false)
-                    return
-                }
-                
-                self.vpnManager = NEVPNManager.shared()
-                
-                let initialState = self.isVpnActive()
-                os_log("Sending initial VPN state: %{public}@", 
+        NEVPNManager.shared().loadFromPreferences { [weak self] error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                os_log("Error loading VPN preferences: %{public}@", 
                        log: Self.logger, 
-                       type: .info, 
-                       initialState ? "active" : "inactive")
-                events(initialState)
-                
-                NotificationCenter.default.addObserver(
-                    self,
-                    selector: #selector(self.vpnStatusDidChange),
-                    name: .NEVPNStatusDidChange,
-                    object: nil
-                )
-                
-                os_log("VPN status observer registered", log: Self.logger, type: .debug)
+                       type: .error, 
+                       error.localizedDescription)
+                events(false)
+                return
             }
-        } else {
-            os_log("VPN monitoring not available (iOS < 12.0)", 
+            
+            self.vpnManager = NEVPNManager.shared()
+            
+            let initialState = self.isVpnActive()
+            os_log("Sending initial VPN state: %{public}@", 
                    log: Self.logger, 
-                   type: .warning)
-            events(false)
+                   type: .info, 
+                   initialState ? "active" : "inactive")
+            events(initialState)
+            
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(self.vpnStatusDidChange),
+                name: .NEVPNStatusDidChange,
+                object: nil
+            )
+            
+            os_log("VPN status observer registered", log: Self.logger, type: .debug)
         }
         
         return nil
@@ -141,14 +122,12 @@ public class FlutterDeviceStatePlugin: NSObject, FlutterPlugin, FlutterStreamHan
     public func onCancel(withArguments arguments: Any?) -> FlutterError? {
         os_log("Event channel listener cancelled", log: Self.logger, type: .info)
         
-        if #available(iOS 12.0, *) {
-            NotificationCenter.default.removeObserver(
-                self,
-                name: .NEVPNStatusDidChange,
-                object: nil
-            )
-            os_log("VPN status observer removed", log: Self.logger, type: .debug)
-        }
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .NEVPNStatusDidChange,
+            object: nil
+        )
+        os_log("VPN status observer removed", log: Self.logger, type: .debug)
         
         eventSink = nil
         vpnManager = nil
