@@ -1,203 +1,319 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
 import 'package:flutter_device_state/flutter_device_state.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  final _vpnDetector = VpnDetector();
-  VpnState _vpnState = VpnState.unknown;
-  StreamSubscription<VpnState>? _vpnSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkVpnStatus();
-    _listenToVpnChanges();
-  }
-
-  @override
-  void dispose() {
-    _vpnSubscription?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _checkVpnStatus() async {
-    try {
-      final state = await _vpnDetector.checkVpnStatus();
-      if (mounted) {
-        setState(() {
-          _vpnState = state;
-        });
-      }
-    } on Exception catch (e) {
-      debugPrint('Error checking VPN status: $e');
-    }
-  }
-
-  void _listenToVpnChanges() {
-    _vpnSubscription = _vpnDetector.vpnStateStream.listen(
-      (state) {
-        if (mounted) {
-          setState(() {
-            _vpnState = state;
-          });
-        }
-      },
-      onError: (error) {
-        debugPrint('Error in VPN stream: $error');
-      },
-    );
-  }
-
-  Color _getStatusColor() {
-    switch (_vpnState) {
-      case VpnState.connected:
-        return Colors.green;
-      case VpnState.disconnected:
-        return Colors.red;
-      case VpnState.unknown:
-        return Colors.orange;
-    }
-  }
-
-  IconData _getStatusIcon() {
-    switch (_vpnState) {
-      case VpnState.connected:
-        return Icons.vpn_lock;
-      case VpnState.disconnected:
-        return Icons.vpn_lock_outlined;
-      case VpnState.unknown:
-        return Icons.help_outline;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Flutter Device State Example'),
-          centerTitle: true,
-        ),
-        body: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Status Icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: _getStatusColor().withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: _getStatusColor(), width: 3),
-                    ),
-                    child: Icon(
-                      _getStatusIcon(),
-                      size: 60,
-                      color: _getStatusColor(),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+      title: 'Flutter Device State Example',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const DeviceStatePage(),
+    );
+  }
+}
 
-                  // Status Text
-                  Text(
-                    'VPN Status',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _vpnState.description,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: _getStatusColor(),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
+class DeviceStatePage extends StatefulWidget {
+  const DeviceStatePage({super.key});
 
-                  // Status Card
-                  Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          _buildInfoRow('Connected', _vpnState.isConnected),
-                          const Divider(),
-                          _buildInfoRow(
-                            'Disconnected',
-                            _vpnState.isDisconnected,
-                          ),
-                          const Divider(),
-                          _buildInfoRow('Unknown', _vpnState.isUnknown),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+  @override
+  State<DeviceStatePage> createState() => _DeviceStatePageState();
+}
 
-                  // Refresh Button
-                  ElevatedButton.icon(
-                    onPressed: _checkVpnStatus,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Check Again'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+class _DeviceStatePageState extends State<DeviceStatePage> {
+  final _deviceState = FlutterDeviceState();
 
-                  // Info Text
-                  Text(
-                    'Real-time monitoring is active',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                  ),
-                ],
+  // VPN state
+  VpnState _vpnState = VpnState.unknown;
+
+  // 🆕 Security state
+  bool _isDeveloperMode = false;
+  bool _hasScreenLock = false;
+  bool _isEmulator = false;
+  SecurityState? _securityState;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAllStates();
+    _listenToVpnChanges();
+  }
+
+  Future<void> _checkAllStates() async {
+    // Check VPN
+    final vpnState = await _deviceState.vpn.checkStatus();
+
+    // 🆕 Check security features
+    final isDeveloperMode = await _deviceState.security
+        .isDeveloperModeEnabled();
+    final hasScreenLock = await _deviceState.security.hasScreenLock();
+    final isEmulator = await _deviceState.security.isEmulator();
+    final securityState = await _deviceState.security.getSecurityState();
+
+    setState(() {
+      _vpnState = vpnState;
+      _isDeveloperMode = isDeveloperMode;
+      _hasScreenLock = hasScreenLock;
+      _isEmulator = isEmulator;
+      _securityState = securityState;
+    });
+  }
+
+  void _listenToVpnChanges() {
+    _deviceState.vpn.stateStream.listen((state) {
+      setState(() {
+        _vpnState = state;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Device State Monitor'),
+        centerTitle: true,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _checkAllStates,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // VPN Status Card
+              _buildVpnCard(),
+              const SizedBox(height: 16),
+
+              // 🆕 Security Status Card
+              _buildSecurityCard(),
+              const SizedBox(height: 16),
+
+              // 🆕 Security Details Cards
+              _buildDeveloperModeCard(),
+              const SizedBox(height: 12),
+              _buildScreenLockCard(),
+              const SizedBox(height: 12),
+              _buildEmulatorCard(),
+              const SizedBox(height: 24),
+
+              // Refresh Button
+              ElevatedButton.icon(
+                onPressed: _checkAllStates,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Refresh All'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, bool value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          Icon(
-            value ? Icons.check_circle : Icons.cancel,
-            color: value ? Colors.green : Colors.grey,
-          ),
-        ],
+  Widget _buildVpnCard() {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _vpnState.isConnected
+                      ? Icons.vpn_lock
+                      : Icons.vpn_lock_outlined,
+                  color: _vpnState.isConnected ? Colors.green : Colors.grey,
+                  size: 32,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'VPN Status',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        _vpnState.description,
+                        style: TextStyle(
+                          color: _vpnState.isConnected
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🆕 Security Overview Card
+  Widget _buildSecurityCard() {
+    final state = _securityState;
+    if (state == null) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    Color levelColor;
+    IconData levelIcon;
+
+    switch (state.level) {
+      case SecurityLevel.secure:
+        levelColor = Colors.green;
+        levelIcon = Icons.shield;
+        break;
+      case SecurityLevel.warning:
+        levelColor = Colors.orange;
+        levelIcon = Icons.warning;
+        break;
+      case SecurityLevel.compromised:
+        levelColor = Colors.red;
+        levelIcon = Icons.dangerous;
+        break;
+      case SecurityLevel.unknown:
+        levelColor = Colors.grey;
+        levelIcon = Icons.help;
+        break;
+    }
+
+    return Card(
+      elevation: 4,
+      color: levelColor.withValues(alpha: 25),
+
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(levelIcon, color: levelColor, size: 32),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Security Status',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        state.level.description,
+                        style: TextStyle(color: levelColor),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (state.issues.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Divider(),
+              const Text(
+                'Issues Detected:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ...state.issues.map(
+                (issue) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, size: 16, color: levelColor),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(issue)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🆕 Developer Mode Card
+  Widget _buildDeveloperModeCard() {
+    return Card(
+      child: ListTile(
+        leading: Icon(
+          Icons.developer_mode,
+          color: _isDeveloperMode ? Colors.orange : Colors.green,
+        ),
+        title: const Text('Developer Mode'),
+        subtitle: Text(_isDeveloperMode ? 'Enabled' : 'Disabled'),
+        trailing: Icon(
+          _isDeveloperMode ? Icons.warning : Icons.check_circle,
+          color: _isDeveloperMode ? Colors.orange : Colors.green,
+        ),
+      ),
+    );
+  }
+
+  // 🆕 Screen Lock Card
+  Widget _buildScreenLockCard() {
+    return Card(
+      child: ListTile(
+        leading: Icon(
+          Icons.lock,
+          color: _hasScreenLock ? Colors.green : Colors.red,
+        ),
+        title: const Text('Screen Lock'),
+        subtitle: Text(_hasScreenLock ? 'Enabled' : 'Not Set'),
+        trailing: Icon(
+          _hasScreenLock ? Icons.check_circle : Icons.error,
+          color: _hasScreenLock ? Colors.green : Colors.red,
+        ),
+      ),
+    );
+  }
+
+  // 🆕 Emulator Card
+  Widget _buildEmulatorCard() {
+    return Card(
+      child: ListTile(
+        leading: Icon(
+          Icons.phone_android,
+          color: _isEmulator ? Colors.orange : Colors.green,
+        ),
+        title: const Text('Device Type'),
+        subtitle: Text(_isEmulator ? 'Emulator' : 'Physical Device'),
+        trailing: Icon(
+          _isEmulator ? Icons.warning : Icons.check_circle,
+          color: _isEmulator ? Colors.orange : Colors.green,
+        ),
       ),
     );
   }

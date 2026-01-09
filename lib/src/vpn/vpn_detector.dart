@@ -11,16 +11,19 @@ import 'vpn_state.dart';
 /// final vpnDetector = VpnDetector();
 ///
 /// // Check current VPN status
-/// final state = await vpnDetector.checkVpnStatus();
+/// final state = await vpnDetector.checkStatus();
 /// print('VPN is ${state.isConnected ? "connected" : "disconnected"}');
 ///
 /// // Listen to VPN state changes
-/// vpnDetector.vpnStateStream.listen((state) {
+/// vpnDetector.stateStream.listen((state) {
 ///   print('VPN state changed: ${state.description}');
 /// });
 /// ```
 class VpnDetector {
-  final VpnDetectorPlatform _platform = VpnDetectorPlatform();
+  /// Create a VpnDetector with optional custom platform implementation
+  VpnDetector({VpnDetectorPlatform? platform})
+      : _platform = platform ?? VpnDetectorPlatform();
+  final VpnDetectorPlatform _platform;
 
   /// Checks the current VPN connection status
   ///
@@ -31,12 +34,12 @@ class VpnDetector {
   ///
   /// Example:
   /// ```dart
-  /// final state = await vpnDetector.checkVpnStatus();
+  /// final state = await vpnDetector.checkStatus();
   /// if (state.isConnected) {
   ///   print('VPN is active');
   /// }
   /// ```
-  Future<VpnState> checkVpnStatus() => _platform.checkVpnStatus();
+  Future<VpnState> checkStatus() => _platform.checkVpnStatus();
 
   /// Checks if VPN is currently active (convenience method)
   ///
@@ -45,12 +48,12 @@ class VpnDetector {
   ///
   /// Example:
   /// ```dart
-  /// if (await vpnDetector.isVpnActive()) {
+  /// if (await vpnDetector.isActive()) {
   ///   print('VPN detected!');
   /// }
   /// ```
-  Future<bool> isVpnActive() async {
-    final state = await checkVpnStatus();
+  Future<bool> isActive() async {
+    final state = await checkStatus();
     return state.isConnected;
   }
 
@@ -63,12 +66,12 @@ class VpnDetector {
   ///
   /// Example:
   /// ```dart
-  /// final subscription = vpnDetector.vpnStateStream.listen((state) {
+  /// final subscription = vpnDetector.stateStream.listen((state) {
   ///   print('VPN state: ${state.description}');
   /// });
   ///
   /// // Don't forget to cancel when done
   /// await subscription.cancel();
   /// ```
-  Stream<VpnState> get vpnStateStream => _platform.vpnStateStream;
+  Stream<VpnState> get stateStream => _platform.vpnStateStream;
 }
