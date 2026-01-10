@@ -52,7 +52,7 @@ class FlutterDeviceStatePlugin : FlutterPlugin, MethodCallHandler, EventChannel.
         vpnEventChannel = EventChannel(flutterPluginBinding.binaryMessenger, VPN_EVENT_CHANNEL)
         vpnEventChannel.setStreamHandler(this)
 
-        // 🆕 Security channel (new)
+        // 🆕 Security channel  
         securityMethodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, SECURITY_METHOD_CHANNEL)
         securityMethodChannel.setMethodCallHandler(this)
 
@@ -76,7 +76,6 @@ class FlutterDeviceStatePlugin : FlutterPlugin, MethodCallHandler, EventChannel.
                 result.success(isVpnActive)
             }
 
-            // 🆕 Security methods (new)
             "isDeveloperModeEnabled" -> {
                 Log.d(TAG, "Method call: isDeveloperModeEnabled")
                 val isDeveloperMode = developerModeDetector?.isDeveloperModeEnabled() ?: false

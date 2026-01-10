@@ -1,6 +1,6 @@
 name: flutter_device_state
 description: Monitor system state including VPN, network capabilities, thermal status, and more. Native Android implementation using Kotlin.
-version: 0.0.1
+version: 1.0.0
 repository: https://github.com/Istiak-Ahmed78/flutter_device_state
 homepage: https://github.com/Istiak-Ahmed78/flutter_device_state
 issue_tracker: https://github.com/Istiak-Ahmed78/flutter_device_state/issues
