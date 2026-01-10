@@ -4,7 +4,10 @@ on:
   pull_request:
     branches: [ develop, main ]
     types: [opened, synchronize, reopened]
-
+permissions:
+  contents: read
+  pull-requests: write  # Allows commenting on PRs
+  issues: write         # Allows commenting on issues
 jobs:
   pr-validation:
     name: PR Validation
