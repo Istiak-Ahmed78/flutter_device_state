@@ -2,13 +2,18 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'flutter_device_state_method_channel.dart';
 
+/// Platform interface for Flutter Device State plugin
+///
+/// This is kept for potential future features that need platform-specific implementations.
+/// Currently, VPN and Security features use their own platform channels.
 abstract class FlutterDeviceStatePlatform extends PlatformInterface {
   /// Constructs a FlutterDeviceStatePlatform.
   FlutterDeviceStatePlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static FlutterDeviceStatePlatform _instance = MethodChannelFlutterDeviceState();
+  static FlutterDeviceStatePlatform _instance =
+      MethodChannelFlutterDeviceState();
 
   /// The default instance of [FlutterDeviceStatePlatform] to use.
   ///
@@ -23,6 +28,7 @@ abstract class FlutterDeviceStatePlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  /// Get platform version (example method, not currently used)
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
